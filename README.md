@@ -1,1 +1,1 @@
-## synctree-studio
+## Synctree Studio
