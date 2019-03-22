@@ -2,7 +2,7 @@
 
 /**
  * This file is Created by Ntuple GeneratedEngine.
- * 2019-03-22 12:40:57
+ * 2019-03-22 12:50:42
  */
 
 namespace controllers\generated\usr\owner_nntuple_com;
@@ -21,7 +21,7 @@ use libraries\util\RedisUtil;
 
 class GeneratebPk6Bidk0jrzhNQkKprzhsController extends Synctree
 {
-	const BIZOPS = '{"app_id":5,"biz_id":51,"biz_uid":"bPk6Bidk0jrzhNQkKprzhs","biz_name":"DEV_BIZ3","biz_desc":"DEV_BIZ3_DESC","actor_alias":"DEV-Consumer","method":2,"req_method":1,"reg_date":"2019-03-05 16:14:50","request":[{"param_id":642,"req_key":"biz_user_key","req_var_type":"INT","req_desc":"description"},{"param_id":643,"req_key":"biz_user_name","req_var_type":"STR","req_desc":"description"},{"param_id":816,"req_key":"biz_user_json","req_var_type":"JSN","req_desc":""}],"operators":{"1":{"binding_seq":1,"operation_id":77,"operation_key":"w0EZbM1hWM8WLmzIQ9HhWg","operation_namespace_id":13,"operation_namespace_name":"AIG11","header_transfer_type_code":1,"operation_name":"테스트 OP","operation_description":"테스트 OP","protocol_type_code":2,"request_method_code":2,"auth_type_code":0,"auth_keys":null,"control_container_code":0,"control_container_info":null},"2":{"binding_seq":2,"operation_id":82,"operation_key":"BfggMp7j42btsj2redIKKA","operation_namespace_id":1,"operation_namespace_name":"AIG","header_transfer_type_code":1,"operation_name":"테스트 OP45654","operation_description":"테스트 OP","protocol_type_code":2,"request_method_code":2,"auth_type_code":0,"auth_keys":"[{\"env\": \"dev\", \"token\": \"eeee\"}]","control_container_code":0,"control_container_info":null},"4":{"binding_seq":4,"operation_id":23,"operation_key":"CoKHczND6B6B_SZj3J2Izw","operation_namespace_id":2,"operation_namespace_name":"AIG1","header_transfer_type_code":1,"operation_name":"dev_op1","operation_description":"dev_op1","protocol_type_code":2,"request_method_code":2,"auth_type_code":1,"auth_keys":null,"control_container_code":1,"control_container_info":"{\"value\": \"10\", \"operator\": 2, \"control_id\": 36}"},"5":{"binding_seq":5,"operation_id":24,"operation_key":"uTSEARaPB0_7X7q2d5cr1w","operation_namespace_id":1,"operation_namespace_name":"AIG","header_transfer_type_code":1,"operation_name":"dev_opt2","operation_description":"dev_opt2","protocol_type_code":2,"request_method_code":2,"auth_type_code":2,"auth_keys":null,"control_container_code":1,"control_container_info":"{\"value\": \"10\", \"operator\": 5, \"control_id\": 36}"}},"lines":[],"user_id":"owner@nntuple.com","account_id":5,"team_id":1,"controls":[{"control_alt_id":36,"binding_seq":3,"parameter_id":640,"object_code":1,"biz_ops_id":null,"biz_ops_name":null,"operation_id":82,"operation_namespace_id":1,"operation_name":"테스트 OP45654","direction_code":2,"parameter_key_name":"bicycle_store","parameter_type_code":5,"sub_parameter_format":"{\"bicycle\": {\"color\": \"red\", \"price\": 19.95, \"available\": true}}","sub_parameter_path":"$.bicycle.price","control_alt_description":"dsfewfwfwefwefwef"}]}';
+	const BIZOPS = '{"app_id":5,"biz_id":51,"biz_uid":"bPk6Bidk0jrzhNQkKprzhs","biz_name":"DEV_BIZ3","biz_desc":"DEV_BIZ3_DESC","actor_alias":"DEV-Consumer","method":2,"req_method":1,"reg_date":"2019-03-05 16:14:50","request":[{"param_id":642,"req_key":"biz_user_key","req_var_type":"INT","req_desc":"description"},{"param_id":643,"req_key":"biz_user_name","req_var_type":"STR","req_desc":"description"},{"param_id":816,"req_key":"biz_user_json","req_var_type":"JSN","req_desc":""}],"operators":{"1":{"binding_seq":1,"operation_id":77,"operation_key":"w0EZbM1hWM8WLmzIQ9HhWg","operation_namespace_id":13,"operation_namespace_name":"AIG11","header_transfer_type_code":1,"operation_name":"테스트 OP","operation_description":"테스트 OP","protocol_type_code":2,"request_method_code":2,"auth_type_code":0,"auth_keys":null,"control_container_code":0,"control_container_info":null},"2":{"binding_seq":2,"operation_id":82,"operation_key":"BfggMp7j42btsj2redIKKA","operation_namespace_id":1,"operation_namespace_name":"AIG","header_transfer_type_code":1,"operation_name":"테스트 OP45654","operation_description":"테스트 OP","protocol_type_code":1,"request_method_code":2,"auth_type_code":0,"auth_keys":"[{\"env\": \"dev\", \"token\": \"eeee\"}]","control_container_code":0,"control_container_info":null},"4":{"binding_seq":4,"operation_id":23,"operation_key":"CoKHczND6B6B_SZj3J2Izw","operation_namespace_id":2,"operation_namespace_name":"AIG1","header_transfer_type_code":1,"operation_name":"dev_op1","operation_description":"dev_op1","protocol_type_code":2,"request_method_code":2,"auth_type_code":1,"auth_keys":null,"control_container_code":1,"control_container_info":"{\"value\": \"10\", \"operator\": 2, \"control_id\": 36}"},"5":{"binding_seq":5,"operation_id":24,"operation_key":"uTSEARaPB0_7X7q2d5cr1w","operation_namespace_id":1,"operation_namespace_name":"AIG","header_transfer_type_code":1,"operation_name":"dev_opt2","operation_description":"dev_opt2","protocol_type_code":2,"request_method_code":2,"auth_type_code":2,"auth_keys":null,"control_container_code":1,"control_container_info":"{\"value\": \"10\", \"operator\": 5, \"control_id\": 36}"}},"lines":[],"user_id":"owner@nntuple.com","account_id":5,"team_id":1,"controls":[{"control_alt_id":36,"binding_seq":3,"parameter_id":640,"object_code":1,"biz_ops_id":null,"biz_ops_name":null,"operation_id":82,"operation_namespace_id":1,"operation_name":"테스트 OP45654","direction_code":2,"parameter_key_name":"bicycle_store","parameter_type_code":5,"sub_parameter_format":"{\"bicycle\": {\"color\": \"red\", \"price\": 19.95, \"available\": true}}","sub_parameter_path":"$.bicycle.price","control_alt_description":"dsfewfwfwefwefwef"}]}';
 
 	private $httpClient;
 
@@ -182,8 +182,15 @@ class GeneratebPk6Bidk0jrzhNQkKprzhsController extends Synctree
 		    'book_title' => $this->resultParams['response']['book_store']['book'][0]['title'] ?? null,
 		    'book_price' => $this->resultParams['response']['book_store']['book'][0]['price'] ?? null,
 		];
+
+		$uuid = Uuid::uuid5(Uuid::NAMESPACE_DNS, session_id() . time());
+		$this->eventKey = strtoupper('event-' . $uuid->toString());
+		$datas = ['event_key' => $this->eventKey, 'params' => $options['form_params']];
+		RedisUtil::setDataWithExpire($this->redis, CommonConst::REDIS_SECURE_PROTOCOL_COMMAND, $this->eventKey, CommonConst::REDIS_SESSION_EXPIRE_TIME_MIN_5, $datas);
+
 		try {
-		    $ret = $this->httpClient->request('POST', $targetUrl, $options);
+		    $secureData['form_params'] = ['event_key' => $this->eventKey];
+		    $ret = $this->httpClient->request('POST', $targetUrl, $secureData);
 
 		    $resData = $ret->getBody()->getContents();
 		    $resData = strip_tags($resData);
@@ -204,7 +211,6 @@ class GeneratebPk6Bidk0jrzhNQkKprzhsController extends Synctree
 		    'op_name' => '테스트 OP45654',
 		    'request_target_url' => $targetUrl,
 		    'server_status' => $resStatus,
-		    'request' => $options['form_params'],
 		    'response' => [
 		        'bicycle_store' => $resData['bicycle_store'] ?? null,
 		    ]
