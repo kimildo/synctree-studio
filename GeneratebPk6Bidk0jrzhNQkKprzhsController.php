@@ -2,7 +2,7 @@
 
 /**
  * This file is Created by Ntuple GeneratedEngine.
- * 2019-03-22 12:27:45
+ * 2019-03-22 12:40:57
  */
 
 namespace controllers\generated\usr\owner_nntuple_com;
@@ -225,10 +225,10 @@ class GeneratebPk6Bidk0jrzhNQkKprzhsController extends Synctree
 		$options['verify'] = $this->httpReqVerify;
 		$options['timeout'] = $this->httpReqTimeout;
 		$options['form_params'] = [
-		    'userKey' => '',
-		    'signCode' => '',
-		    'userName' => '',
-		    'userBirth' => '',
+		    'userKey' => $this->params['biz_user_key'] ?? null,
+		    'signCode' => 'AAAAA',
+		    'userName' => $this->params['biz_user_name'] ?? null,
+		    'userBirth' => '19780814',
 		];
 		try {
 		    $ret = $this->httpClient->request('POST', $targetUrl, $options);
@@ -273,9 +273,9 @@ class GeneratebPk6Bidk0jrzhNQkKprzhsController extends Synctree
 		$options['verify'] = $this->httpReqVerify;
 		$options['timeout'] = $this->httpReqTimeout;
 		$options['form_params'] = [
-		    'req_user_key' => '',
-		    'req_usr_name' => '',
-		    'req_result' => '',
+		    'req_user_key' => $this->params['biz_user_key'] ?? null,
+		    'req_usr_name' => $this->params['biz_user_name'] ?? null,
+		    'req_result' => $this->resultParams['response']['bicycle_store']['bicycle']['color'] ?? null,
 		];
 		try {
 		    $ret = $this->httpClient->request('POST', $targetUrl, $options);
