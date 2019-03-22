@@ -313,3 +313,4 @@ class GeneratebPk6Bidk0jrzhNQkKprzhsController extends Synctree
 		return $result;
 	}
 }
+
