@@ -78,7 +78,7 @@ class GeneratebPk6Bidk0jrzhNQkKprzhsController extends Synctree
 		        'actor_alias' => $bizOps['actor_alias'] ?? null,
 		        'request' => $this->params,
 		    ];
-		    $this->params['biz_user_json'] = json_decode($this->params['biz_user_json'], true);
+		    $this->params['biz_user_json'] = CommonUtil::getValidJSON($this->params['biz_user_json']);
 
 		    $responseDatas[] = $this->resultParams = $this->_subW0EZBM1HWM8WLMZIQ9HHWG1($request, $response);
 		    $responseDatas[] = $this->resultParams = $this->_subBFGGMP7J42BTSJ2REDIKKA2($request, $response);
