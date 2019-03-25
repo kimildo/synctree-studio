@@ -83,7 +83,6 @@ class GenerateUtil
         $this->class->addConstant('BIZOPS', json_encode($this->params, JSON_UNESCAPED_UNICODE));
         //$class->addConstant('BUNIT_TOKEN', $this->params['token']);
 
-        $this->class->addProperty('httpClient')->setVisibility('private');
         $this->class->addProperty('eventKey')->setVisibility('private');
         $this->class->addProperty('resultParams')->setVisibility('private');
         $this->class->addProperty('params')->setVisibility('private');
@@ -91,9 +90,9 @@ class GenerateUtil
         $this->class->addProperty('httpReqTimeout', 3)->setVisibility('private');
         $this->class->addProperty('httpReqVerify', false)->setVisibility('private');
 
-
         $this->class->addMethod('__construct')->setBody('parent::__construct($ci);')->addParameter('ci')->setTypeHint('Container');
 
+        $mainMethod = $this->class->addMethod(GeneratorConst::GEN_MAIN_METHOD_NAME);
         $mainBody = <<<'SOURCE'
 $result = [];
 $result['result'] = ErrorConst::SUCCESS_STRING;
@@ -134,19 +133,12 @@ SOURCE;
 SOURCE;
 
         $mainBody .= $requestEncode;
-        $mainMethod = $this->class->addMethod(GeneratorConst::GEN_MAIN_METHOD_NAME);
-        $operation = [];
-
-        //CommonUtil::showArrDump($this->params['controls']);
-        foreach ($this->params['operators'] as $key => $row) {
-            $operation[$key] = $row;
-        }
-        ksort($operation);
 
         $mainBodyArr = [];
         $controlInfoArr = [];
 
-        foreach ($operation as $opSeq => $row) {
+        // 모든 오퍼레이터 서브메소드 생성
+        foreach ($this->params['operators'] as $opSeq => $row) {
 
             $bindSeq = $opSeq;
             $controlInfo = null;
@@ -156,10 +148,8 @@ SOURCE;
                 $bindSeq = $this->params['controls'][$controlIndex]['binding_seq'];
             }
 
-            //$args = ($bindSeq !== array_key_first($operation)) ? '($request, $response, $params, $this->resultParams[\'response\']);' : '($request, $response, $params);';
-            $args = '($request, $response);';
             $subMethodName = GeneratorConst::GEN_SUB_METHOD_NAME . strtoupper($row['operation_key']) . $opSeq;
-            $resSourceText = '    $responseDatas[] = $this->resultParams = $this->' . $subMethodName . $args;
+            $resSourceText = '    $responseDatas[] = $this->resultParams = $this->' . $subMethodName . '($request, $response);';
             if (!empty($row['control_container_code'])) {
                 $mainBodyArr[$bindSeq][$opSeq] = $resSourceText;
                 $controlInfoArr[$opSeq] = $controlInfo;
@@ -167,7 +157,6 @@ SOURCE;
                 $mainBodyArr[$opSeq] = $resSourceText;
             }
 
-            // 모든 오퍼레이터 서브메소드 생성
             if (false === $this->_makeSubfuntion($subMethodName, $row, $opSeq)) {
                 $this->error = 'Error While Make Subfunction';
                 LogMessage::error($this->error);
@@ -176,7 +165,7 @@ SOURCE;
 
         } // end of $operation foreach
 
-        //CommonUtil::showArrDump($mainBodyArr);
+
         // 메인메소드 조건문 or Response 호출 생성
         $controlOperators = CommonConst::CONTROLL_OPERATORS;
         foreach ($mainBodyArr as $key => $row) {
@@ -376,38 +365,15 @@ SOURCE;
      * 오퍼레이션에 따른 서브메소드 생성
      *
      * @param $methodName
-     * @param $row
+     * @param $op
      * @param $bindingSeq
      *
      * @return bool
      * @throws \Exception
      */
-    private function _makeSubfuntion($methodName, $row, $bindingSeq)
+    private function _makeSubfuntion($methodName, $op, $bindingSeq)
     {
         $subBody = '';
-
-        if (false === ($op = AppsUtil::getOperationInfo($this->ci, $this->params['account_id'], $this->params['team_id'], $row['operation_id']))) {
-            LogMessage::error('Error Get Operator - File Generator');
-            return false;
-        }
-
-        // 해당 오퍼레이션에 전달 인자 목록을 조회 (request)
-        $result = CommonUtil::callProcedure($this->ci, 'executeGetArgumentList', [
-            'account_id'     => $this->params['account_id'],
-            'team_id'        => $this->params['team_id'],
-            'application_id' => $this->params['app_id'],
-            'biz_ops_id'     => $this->params['biz_id'],
-            'binding_seq'    => $bindingSeq,
-            'operation_id'   => $row['operation_id']
-        ]);
-
-        if (0 !== $result['returnCode']) {
-            LogMessage::error('DB Error GetArgumentList - File Generator');
-            return false;
-        }
-
-        $opDb = $result['data'][1];
-        //$subBody = 'return true;';
         $subBody .= '$targetUrl = \'' . $op['target_url'] . (( ! empty($op['target_method'])) ? '/' . $op['target_method'] : '') . '\';' . PHP_EOL;
 
         switch ($op['req_method']) {
@@ -433,9 +399,9 @@ SOURCE;
                 break;
         }
 
-        if ( ! empty($op['auth_type_code']) && ! empty($row['auth_keys']) ) {
+        if ( ! empty($op['auth_type_code']) && ! empty($op['auth_keys']) ) {
 
-            if (null === ($authKeys = CommonUtil::getValidJSON($row['auth_keys']))) {
+            if (null === ($authKeys = CommonUtil::getValidJSON($op['auth_keys']))) {
                 LogMessage::error('Auth_keys Error Not valid JSON - File Generator');
                 return false;
             }
@@ -453,18 +419,11 @@ SOURCE;
         $subBody .= '$options[\'verify\'] = $this->httpReqVerify;' . PHP_EOL;
         $subBody .= '$options[\'timeout\'] = $this->httpReqTimeout;' . PHP_EOL;
 
-        //CommonUtil::showArrDump($row['operation_id'], false);
-        //CommonUtil::showArrDump($opDb);
-
-        if ( ! empty($opDb)) {
+        if ( ! empty($op['arguments'])) {
             $subBodyReqs = '';
-            foreach ($opDb as $reqs) {
+            foreach ($op['arguments'] as $reqs) {
                 $reqVal = '\'' . $reqs['argument_value'] . '\'';
                 if ( ! empty($reqs['relay_flag'])) {
-
-                    //$reqVal = ( ! empty($reqs['relay_biz_ops_id'])) ? '$params[\'' . $reqs['relay_parameter_key_name'] . '\']'
-                    //        : '$responseDatas[\'' . $reqs['relay_parameter_key_name'] . '\']'
-                    //        ;
 
                     $reqVal = ( ! empty($reqs['relay_biz_ops_id'])) ? '$this->params[\'' . $reqs['relay_parameter_key_name'] . '\']'
                             : '$this->resultParams[\'response\'][\'' . $reqs['relay_parameter_key_name'] . '\']'
@@ -485,63 +444,41 @@ SOURCE;
         if (!empty($subBodyReqs)) {
             $subBody .= '$options[\'' . $opReqTypeVar . '\'] = [' . PHP_EOL;
             $subBody .= $subBodyReqs;
-            $subBody .= '];' . PHP_EOL;
+            $subBody .= '];' . PHP_EOL . PHP_EOL;
         }
 
+        // 보안프로토콜 처리
         if ($op['method'] == CommonConst::PROTOCOL_TYPE_SECURE) {
-            $subBody .= PHP_EOL . '$uuid = Uuid::uuid5(Uuid::NAMESPACE_DNS, session_id() . time());' . PHP_EOL;
+            $subBody .= '$uuid = Uuid::uuid5(Uuid::NAMESPACE_DNS, session_id() . time());' . PHP_EOL;
             $subBody .= '$this->eventKey = strtoupper(\'event-\' . $uuid->toString());' . PHP_EOL;
             $subBody .= '$datas = [\'event_key\' => $this->eventKey, \'params\' => $options[\'' . $opReqTypeVar . '\']];' . PHP_EOL;
-            $subBody .= 'RedisUtil::setDataWithExpire($this->redis, CommonConst::REDIS_SECURE_PROTOCOL_COMMAND, $this->eventKey, CommonConst::REDIS_SESSION_EXPIRE_TIME_MIN_5, $datas);'
-                . PHP_EOL;
-            $subBody .= '' . PHP_EOL;
+            $subBody .= 'RedisUtil::setDataWithExpire($this->redis, CommonConst::REDIS_SECURE_PROTOCOL_COMMAND, $this->eventKey, CommonConst::REDIS_SESSION_EXPIRE_TIME_MIN_5, $datas);';
+            $subBody .= PHP_EOL . '' . PHP_EOL;
         }
-
-        $subBody .= 'try { ' . PHP_EOL;
 
         if ($op['method'] == CommonConst::PROTOCOL_TYPE_SECURE) {
-            $subBody .= '    $secureData[\'' . $opReqTypeVar . '\'] = [\'event_key\' => $this->eventKey];' . PHP_EOL;
-            $subBody .= '    $ret = $this->httpClient->request(\'' . $opReqType . '\', $targetUrl, $secureData);' . PHP_EOL;
+            $subBody .= '$secureData[\'' . $opReqTypeVar . '\'] = [\'event_key\' => $this->eventKey];' . PHP_EOL;
+            $subBody .= '$ret = $this->_httpRequest($targetUrl, $secureData, \'' . $opReqType . '\');' . PHP_EOL;
         } else {
-            $subBody .= '    $ret = $this->httpClient->request(\'' . $opReqType . '\', $targetUrl, $options);' . PHP_EOL;
+            $subBody .= '$ret = $this->_httpRequest($targetUrl, $options, \'' . $opReqType . '\');' . PHP_EOL;
         }
 
-        $subBody .= <<<'SOURCE'
-        
-    $resData = $ret->getBody()->getContents();
-    $resData = strip_tags($resData);
-    $resData = CommonUtil::getValidJSON($resData);
-    $resStatus = $ret->getStatusCode() . ' ' . $ret->getReasonPhrase();
-
-} catch (\GuzzleHttp\Exception\ServerException $e) {
-    preg_match('/`(5[0-9]{2}[a-z\s]+)`/i', $e->getMessage(), $output);
-    $resStatus = $output[1];
-} catch (\GuzzleHttp\Exception\ClientException $e) {
-    preg_match('/`(4[0-9]{2}[a-z\s]+)`/i', $e->getMessage(), $output);
-    $resStatus = $output[1];
-} catch (\Exception $e) {
-    $resStatus = "Name or service not known";
-}
-SOURCE;
-
-        $subBody .= PHP_EOL . PHP_EOL . '$result = [' . PHP_EOL;
+        $subBody .= PHP_EOL . '$result = [' . PHP_EOL;
         $subBody .= '    \'op_name\' => \'' . $op['op_name'] . '\',' . PHP_EOL;
         $subBody .= '    \'request_target_url\' => $targetUrl,' . PHP_EOL;
-        $subBody .= '    \'server_status\' => $resStatus,' . PHP_EOL;
+        $subBody .= '    \'server_status\' => $ret[\'res_status\'],' . PHP_EOL;
 
         if ($op['method'] == CommonConst::PROTOCOL_TYPE_SIMPLE_HTTP) {
             $subBody .= '    \'request\' => $options[\'' . $opReqTypeVar . '\'],' . PHP_EOL;
         }
 
         $subBody .= '    \'response\' => [' . PHP_EOL;
-
         foreach ($op['response'] as $ress) {
-            $subBody .= '        \'' . $ress['res_key'] . '\' => $resData[\'' . $ress['res_key'] . '\'] ?? null,' . PHP_EOL;
+            $subBody .= '        \'' . $ress['res_key'] . '\' => $ret[\'res_data\'][\'' . $ress['res_key'] . '\'] ?? null,' . PHP_EOL;
         }
-
         $subBody .= '    ]' . PHP_EOL;
         $subBody .= '];' . PHP_EOL;
-        $subBody .= 'return $result;' . PHP_EOL;
+        $subBody .=  PHP_EOL . 'return $result;' . PHP_EOL;
 
         // 하위 메소드 생성
         $method = $this->class->addMethod($methodName)->setVisibility('private');
