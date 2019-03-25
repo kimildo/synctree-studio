@@ -29,9 +29,8 @@ class Synctree extends SynctreeAbstract
     protected $renderer;
     protected $redis;
     protected $jsonResult;
+    protected $httpClient;
 
-    private $httpReqTimeout = 3;
-    private $httpReqVerify = false;
 
     /**
      * Synctree constructor.
@@ -132,6 +131,47 @@ class Synctree extends SynctreeAbstract
 
         LogMessage::info('_eventListener :: ' . $resStatus);
         return $result;
+    }
+
+    /**
+     * guzzle request
+     *
+     * @param        $targetUrl
+     * @param        $options
+     * @param string $method
+     *
+     * @return array
+     */
+    protected function _httpRequest($targetUrl, $options, $method = 'POST' )
+    {
+        $resData = null;
+
+        if (empty($this->httpClient)) {
+            return [];
+        }
+
+        try {
+
+            $ret = $this->httpClient->request($method, $targetUrl, $options);
+            $resData = $ret->getBody()->getContents();
+            $resData = strip_tags($resData);
+            $resData = CommonUtil::getValidJSON($resData);
+            $resStatus = $ret->getStatusCode() . ' ' . $ret->getReasonPhrase();
+
+        } catch (\GuzzleHttp\Exception\ServerException $e) {
+            preg_match('/`(5[0-9]{2}[a-z\s]+)`/i', $e->getMessage(), $output);
+            $resStatus = $output[1];
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            preg_match('/`(4[0-9]{2}[a-z\s]+)`/i', $e->getMessage(), $output);
+            $resStatus = $output[1];
+        } catch (\Exception $e) {
+            $resStatus = "Name or service not known";
+        }
+
+        return [
+            'res_status' => $resStatus,
+            'res_data' => $resData,
+        ];
 
     }
 
