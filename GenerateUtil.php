@@ -86,9 +86,6 @@ class GenerateUtil
         $this->class->addProperty('eventKey')->setVisibility('private');
         $this->class->addProperty('resultParams')->setVisibility('private');
         $this->class->addProperty('params')->setVisibility('private');
-        $this->class->addProperty('promise')->setVisibility('private');
-        $this->class->addProperty('httpReqTimeout', 3)->setVisibility('private');
-        $this->class->addProperty('httpReqVerify', false)->setVisibility('private');
 
         $this->class->addMethod('__construct')->setBody('parent::__construct($ci);')->addParameter('ci')->setTypeHint('Container');
 
@@ -122,8 +119,7 @@ SOURCE;
     }
     
     $bizOps = json_decode(static::BIZOPS, true);
-    $this->httpClient = new \GuzzleHttp\Client();
-	
+    
 	$responseDatas = [];
     $result['request'] = [
         'actor_alias' => $bizOps['actor_alias'] ?? null,
@@ -416,8 +412,10 @@ SOURCE;
             }
         }
 
-        $subBody .= '$options[\'verify\'] = $this->httpReqVerify;' . PHP_EOL;
-        $subBody .= '$options[\'timeout\'] = $this->httpReqTimeout;' . PHP_EOL;
+        if ($op['method'] !== CommonConst::PROTOCOL_TYPE_SECURE) {
+            $subBody .= '$options[\'verify\'] = $this->httpReqVerify;' . PHP_EOL;
+            $subBody .= '$options[\'timeout\'] = $this->httpReqTimeout;' . PHP_EOL;
+        }
 
         if ( ! empty($op['arguments'])) {
             $subBodyReqs = '';
