@@ -13,14 +13,12 @@ use Slim\Container;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use abstraction\classes\SynctreeAbstract;
-use libraries\{
-    constant\CommonConst,
+use libraries\{constant\CommonConst,
     constant\ErrorConst,
     log\LogMessage,
     util\CommonUtil,
     util\RedisUtil,
-    util\AwsUtil
-};
+    util\AwsUtil};
 
 class Synctree extends SynctreeAbstract
 {
@@ -30,6 +28,10 @@ class Synctree extends SynctreeAbstract
     protected $redis;
     protected $jsonResult;
     protected $httpClient;
+    protected $promise;
+    protected $promiseResponseData;
+    protected $httpReqTimeout = 3;
+    protected $httpReqVerify = false;
 
 
     /**
@@ -44,10 +46,10 @@ class Synctree extends SynctreeAbstract
         $this->ci = $ci;
 
         try {
-            $this->ci       = $ci;
-            $this->logger   = $ci->get('logger');
+            $this->ci = $ci;
+            $this->logger = $ci->get('logger');
             $this->renderer = $ci->get('renderer');
-            $this->redis    = $ci->get('redis');
+            $this->redis = $ci->get('redis');
         } catch (\Exception $ex) {
             LogMessage::error($ex->getMessage());
         }
@@ -102,34 +104,21 @@ class Synctree extends SynctreeAbstract
      */
     protected function _eventListener($params)
     {
-        $httpClient = new \GuzzleHttp\Client();
         $result = false;
 
-        try {
-
-            if (false === CommonUtil::validateParams($params, ['target_url', 'event_key'])) {
-                return $result;
-            }
-
-            $secureData['json'] = ['event_key' => $params['event_key']];
-            $ret = $httpClient->request('POST', $params['target_url'], $secureData);
-            $resData = $ret->getBody()->getContents();
-            $resData = strip_tags($resData);
-            $resData = json_decode($resData, true);
-            $resStatus = $ret->getStatusCode() . ' ' . $ret->getReasonPhrase();
-            $result = $resData;
-
-        } catch (\GuzzleHttp\Exception\ServerException $e) {
-            preg_match('/`(5[0-9]{2}[a-z\s]+)`/i', $e->getMessage(), $output);
-            $resStatus = $output[1];
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            preg_match('/`(4[0-9]{2}[a-z\s]+)`/i', $e->getMessage(), $output);
-            $resStatus = $output[1];
-        } catch (\Exception $e) {
-            $resStatus = "Name or service not known";
+        if (false === CommonUtil::validateParams($params, ['target_url', 'event_key'])) {
+            return $result;
         }
 
+        $options['verify'] = $this->httpReqVerify;
+        $options['timeout'] = $this->httpReqTimeout;
+        $options['json'] = ['event_key' => $params['event_key']];
+
+        $result = $this->_httpRequest($params['target_url'], $options);
+
+        $resStatus = $result['res_status'];
         LogMessage::info('_eventListener :: ' . $resStatus);
+
         return $result;
     }
 
@@ -141,16 +130,18 @@ class Synctree extends SynctreeAbstract
      * @param string $method
      *
      * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    protected function _httpRequest($targetUrl, $options, $method = 'POST' )
+    protected function _httpRequest($targetUrl, $options, $method = 'POST')
     {
         $resData = null;
-
-        if (empty($this->httpClient)) {
-            return [];
-        }
+        $resStatus = null;
 
         try {
+
+            if (empty($this->httpClient) || ! is_object($this->httpClient)) {
+                $this->httpClient = new \GuzzleHttp\Client();
+            }
 
             $ret = $this->httpClient->request($method, $targetUrl, $options);
             $resData = $ret->getBody()->getContents();
@@ -161,17 +152,91 @@ class Synctree extends SynctreeAbstract
         } catch (\GuzzleHttp\Exception\ServerException $e) {
             preg_match('/`(5[0-9]{2}[a-z\s]+)`/i', $e->getMessage(), $output);
             $resStatus = $output[1];
+            LogMessage::error('url :: ' . $targetUrl . ', error :: ' . $resStatus . ', options :: ' . json_encode($options, JSON_UNESCAPED_UNICODE));
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             preg_match('/`(4[0-9]{2}[a-z\s]+)`/i', $e->getMessage(), $output);
             $resStatus = $output[1];
+            LogMessage::error('url :: ' . $targetUrl . ', error :: ' . $resStatus);
         } catch (\Exception $e) {
             $resStatus = "Name or service not known";
+            LogMessage::error('url :: ' . $targetUrl . ', error :: ' . $resStatus);
         }
 
         return [
             'res_status' => $resStatus,
-            'res_data' => $resData,
+            'res_data'   => $resData,
         ];
+
+    }
+
+    /**
+     * 비동기 호출
+     *
+     * @param array $asyncDomains
+     * @param bool $wait
+     * @return array
+     *
+     * $domainArr = [
+            [
+            'url' => 'https://3069d955-08a7-4052-8f61-a83f488a32a6.mock.pstmn.io/getJson',
+            'method' => 'POST'
+            ],
+            [
+            'url' => 'https://www.naver.com/efwefwe',
+            'method' => 'POST'
+            ],
+            [
+            'url' => 'https://www.daum.net/ffff',
+            'method' => 'GET'
+            ],
+            [
+            'url' => 'https://3069d955-08a7-4052-8f61-a83f488a32a6.mock.pstmn.io/getJson',
+            'method' => 'GET'
+            ]
+       ];
+        $responseDatas['async'] = $this->_httpAsyncRequest($domainArr);
+     */
+    protected function _httpAsyncRequest(array $asyncDomains, $wait = true)
+    {
+        $this->promiseResponseData = [];
+
+        try {
+
+            if (empty($this->httpClient) || ! is_object($this->httpClient)) {
+                $this->httpClient = new \GuzzleHttp\Client();
+            }
+
+            $requestPromises = function ($targets) {
+                foreach ($targets as $target) {
+                    yield function() use ($target) {
+                        return $this->httpClient->requestAsync($target['method'], $target['url'], $target['options'] ?? [] );
+                    };
+                }
+            };
+
+            $pool = new \GuzzleHttp\Pool($this->httpClient, $requestPromises($asyncDomains), [
+                'concurrency' => 2,
+                'fulfilled' => function ($response, $index) {
+                    // this is delivered each successful response
+                    $resData = json_decode($response->getBody()->getContents(), true);
+                    $this->promiseResponseData['seq'][] = $index;
+                    $this->promiseResponseData['data'][] = $resData;
+                },
+                'rejected' => function ($reason, $index) {
+                    // this is delivered each failed request
+                },
+            ]);
+
+            if (!empty($wait)) {
+                $promise = $pool->promise();
+                $promise->wait();
+            }
+
+        } catch (\Exception $e) {
+
+        }
+
+        return $this->promiseResponseData;
 
     }
 
@@ -204,6 +269,7 @@ class Synctree extends SynctreeAbstract
             if (APP_ENV === APP_ENV_PRODUCTION) {
                 if (true === ($s3Result = AwsUtil::s3FileUpload($s3FileName, $file, 's3Log'))) {
                     @unlink($file);
+
                     return true;
                 }
             }
