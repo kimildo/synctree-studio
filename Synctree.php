@@ -110,9 +110,11 @@ class Synctree extends SynctreeAbstract
             return $result;
         }
 
-        $options['verify'] = $this->httpReqVerify;
-        $options['timeout'] = $this->httpReqTimeout;
-        $options['json'] = ['event_key' => $params['event_key']];
+        $options = [
+            'verify' => $this->httpReqVerify,
+            'timeout' => $this->httpReqTimeout,
+            'json' => ['event_key' => $params['event_key']]
+        ];
 
         $result = $this->_httpRequest($params['target_url'], $options);
 
@@ -173,11 +175,32 @@ class Synctree extends SynctreeAbstract
      * 비동기 호출
      *
      * @param array $asyncDomains
+     * @param int $concurrency
      * @param bool $wait
+     *                  
      * @return array
      *
+     * $domainArr = [
+            [
+            'url' => 'https://3069d955-08a7-4052-8f61-a83f488a32a6.mock.pstmn.io/getJson',
+            'method' => 'POST'
+            ],
+            [
+            'url' => 'https://www.naver.com/efwefwe',
+            'method' => 'POST'
+            ],
+            [
+            'url' => 'https://www.daum.net/ffff',
+            'method' => 'GET'
+            ],
+            [
+            'url' => 'https://3069d955-08a7-4052-8f61-a83f488a32a6.mock.pstmn.io/getJson',
+            'method' => 'GET'
+            ]
+       ];
+        $responseDatas['async'] = $this->_httpAsyncRequest($domainArr);
      */
-    protected function _httpAsyncRequest(array $asyncDomains, $wait = true)
+    protected function _httpAsyncRequest(array $asyncDomains, $concurrency = 3, $wait = true)
     {
         $this->promiseResponseData = [];
 
@@ -196,7 +219,7 @@ class Synctree extends SynctreeAbstract
             };
 
             $pool = new \GuzzleHttp\Pool($this->httpClient, $requestPromises($asyncDomains), [
-                'concurrency' => 2,
+                'concurrency' => $concurrency,
                 'fulfilled' => function ($response, $index) {
                     // this is delivered each successful response
                     $resData = json_decode($response->getBody()->getContents(), true);
@@ -251,7 +274,6 @@ class Synctree extends SynctreeAbstract
             if (APP_ENV === APP_ENV_PRODUCTION) {
                 if (true === ($s3Result = AwsUtil::s3FileUpload($s3FileName, $file, 's3Log'))) {
                     @unlink($file);
-
                     return true;
                 }
             }
