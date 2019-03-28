@@ -176,25 +176,6 @@ class Synctree extends SynctreeAbstract
      * @param bool $wait
      * @return array
      *
-     * $domainArr = [
-            [
-            'url' => 'https://3069d955-08a7-4052-8f61-a83f488a32a6.mock.pstmn.io/getJson',
-            'method' => 'POST'
-            ],
-            [
-            'url' => 'https://www.naver.com/efwefwe',
-            'method' => 'POST'
-            ],
-            [
-            'url' => 'https://www.daum.net/ffff',
-            'method' => 'GET'
-            ],
-            [
-            'url' => 'https://3069d955-08a7-4052-8f61-a83f488a32a6.mock.pstmn.io/getJson',
-            'method' => 'GET'
-            ]
-       ];
-        $responseDatas['async'] = $this->_httpAsyncRequest($domainArr);
      */
     protected function _httpAsyncRequest(array $asyncDomains, $wait = true)
     {
