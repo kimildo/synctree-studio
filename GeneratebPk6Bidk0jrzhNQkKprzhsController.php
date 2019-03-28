@@ -64,7 +64,7 @@ class GeneratebPk6Bidk0jrzhNQkKprzhsController extends Synctree
 
 		    $bizOps = json_decode(static::BIZOPS, true);
 
-			$responseDatas = [];
+		    $responseDatas = [];
 		    $result['request'] = [
 		        'actor_alias' => $bizOps['actor_alias'] ?? null,
 		        'request' => $this->params,
