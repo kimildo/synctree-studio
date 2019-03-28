@@ -243,6 +243,7 @@ class Synctree extends SynctreeAbstract
 
     /**
      * 로그 S3 업로드
+     * @todo 추후 로그서버를 별도로 구축, 비동기로 전환
      *
      * @param $fileName
      * @param $contents
