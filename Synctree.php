@@ -174,10 +174,10 @@ class Synctree extends SynctreeAbstract
     /**
      * 비동기 호출
      *
-     * @param array $asyncDomains
+     * @param array $asyncRequests
      * @param int $concurrency
      * @param bool $wait
-     *                  
+     *
      * @return array
      *
      * $domainArr = [
@@ -200,7 +200,7 @@ class Synctree extends SynctreeAbstract
        ];
         $responseDatas['async'] = $this->_httpAsyncRequest($domainArr);
      */
-    protected function _httpAsyncRequest(array $asyncDomains, $concurrency = 3, $wait = true)
+    protected function _httpAsyncRequest(array $asyncRequests, $wait = true, $concurrency = 5)
     {
         $this->promiseResponseData = [];
 
@@ -210,31 +210,47 @@ class Synctree extends SynctreeAbstract
                 $this->httpClient = new \GuzzleHttp\Client();
             }
 
-            $requestPromises = function ($targets) {
-                foreach ($targets as $target) {
-                    yield function() use ($target) {
-                        return $this->httpClient->requestAsync($target['method'], $target['url'], $target['options'] ?? [] );
-                    };
-                }
-            };
+            if (true === $wait) {
 
-            $pool = new \GuzzleHttp\Pool($this->httpClient, $requestPromises($asyncDomains), [
-                'concurrency' => $concurrency,
-                'fulfilled' => function ($response, $index) {
-                    // this is delivered each successful response
-                    $resData = json_decode($response->getBody()->getContents(), true);
-                    $this->promiseResponseData['seq'][] = $index;
-                    $this->promiseResponseData['data'][] = $resData;
-                },
-                'rejected' => function ($reason, $index) {
-                    // this is delivered each failed request
-                },
-            ]);
+                $requestPromises = function ($targets) {
+                    foreach ($targets as $target) {
+                        yield function() use ($target) {
+                            return $this->httpClient->requestAsync($target['method'], $target['url'], $target['options'] ?? [] );
+                        };
+                    }
+                };
 
-            if (!empty($wait)) {
+                $pool = new \GuzzleHttp\Pool($this->httpClient, $requestPromises($asyncRequests), [
+                    'concurrency' => $concurrency,
+                    'fulfilled'   => function ($response, $index) {
+                        // this is delivered each successful response
+                        $resData = json_decode($response->getBody()->getContents(), true);
+                        $this->promiseResponseData['seq'][] = $index;
+                        $this->promiseResponseData['data'][] = $resData;
+
+                        $generatedFile = fopen('/home/ubuntu/apps/secure/upload/' . $index . '.txt', 'w');
+                        fwrite($generatedFile, json_encode($resData, JSON_UNESCAPED_UNICODE));
+                        fclose($generatedFile);
+
+                    },
+                    'rejected'    => function ($reason, $index) {
+                        // this is delivered each failed request
+                    },
+                ]);
+
                 $promise = $pool->promise();
                 $promise->wait();
+
+            } else {
+
+                foreach ($asyncRequests as $index => $target) {
+                    $this->promiseResponseData['seq'][] = $index;
+                    $promise[] = $this->httpClient->requestAsync($target['method'], $target['url'], $target['options'] ?? [] );
+                }
+                //$pool = new \GuzzleHttp\Pool($this->httpClient, $requestPromises($asyncRequests));
             }
+
+            //CommonUtil::showArrDump($promise);
 
         } catch (\Exception $e) {
 
