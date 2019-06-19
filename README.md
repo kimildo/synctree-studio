@@ -21,6 +21,6 @@
 > - 오퍼레이터 바인딩시 Authorization 적용
 > - ALT 컨트롤 기능 (오퍼레이터 switch case)
 > - PHP Class, route 파일 생성 및 배포 기능
-> - Async (예정)
+> - Async
 > - Loop (예정)
-> - 오퍼레이터의 변수 require field 기능 (예정)
+> - 오퍼레이터의 변수 require field 기능
